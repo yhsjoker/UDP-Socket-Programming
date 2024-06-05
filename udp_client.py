@@ -17,6 +17,12 @@ def main():
     start_time = 0
     end_time = 0
 
+    if connect_socket(client_socket, server_address):
+        print("Socket connected successfully")
+    else:
+        print("Socket connected unsuccessfully")
+        return
+
     for seq_no, msg in zip(range(1, len(msgs) + 1), msgs):
         try:
             response, server, rtt = send_msg(client_socket, server_address, seq_no, msg)
@@ -45,7 +51,10 @@ def main():
         print("Std RTT: {:.2f} ms".format(np.std(rtt_times)))
     print("Total time: {} s".format(end_time - start_time))
 
-    client_socket.close()
+    if disconnect_socket(client_socket, server_address):
+        print("Socket disconnected successfully")
+    else:
+        print("Socket disconnected unsuccessfully")
 
 
 def get_server_address():
@@ -75,6 +84,44 @@ def get_client_socket():
     return s
 
 
+def connect_socket(client_socket, server_address):
+    """
+    模拟与服务器建立连接。
+
+    Args:
+        client_socket (socket.socket): 客户端用于通信的socket对象。
+        server_address (tuple): 服务器的地址和端口组成的元组。
+
+    Returns:
+        bool: 如果服务器响应为"ok"，则返回True，表示连接成功；否则返回False。
+    """
+    client_socket.sendto("connect".encode(), server_address)
+    response, server = client_socket.recvfrom(1024)
+    if response.decode() != "ok":
+        return False
+    return True
+
+
+def disconnect_socket(client_socket, server_address):
+    """
+    模拟尝试与服务器断开连接，并关闭socket。
+
+    Args:
+        client_socket (socket.socket): 客户端用于通信的socket对象。
+        server_address (tuple): 服务器的地址和端口组成的元组。
+
+    Returns:
+        bool: 如果服务器正确响应"disconnect"后，客户端发送确认断开，并关闭socket，返回True；否则返回False。
+    """
+    client_socket.sendto("disconnect".encode(), server_address)
+    response, server = client_socket.recvfrom(1024)
+    if response.decode() != "disconnect":
+        return False
+    client_socket.sendto("disconnected ok".encode(), server_address)
+    client_socket.close()
+    return True
+
+
 def send_msg(client_socket, server_address, seq_no, msg):
     """
     向指定的服务器发送一个消息，并等待响应，计算往返时间(RTT)。
@@ -98,7 +145,7 @@ def send_msg(client_socket, server_address, seq_no, msg):
     for i in range(config.MAX_RETRIES):
         try:
             client_socket.sendto(pkg.encode(), server_address)
-            response, server = client_socket.recvfrom(config.SEQ_LENGTH + config.VERSION_LENGTH + config.MAX_MSG_LENGTH)
+            response, server = client_socket.recvfrom(1024)
             end_time = time.time()
             rtt = (end_time - start_time) * 1000
             return response.decode(), server, rtt
