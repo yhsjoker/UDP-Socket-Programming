@@ -23,7 +23,7 @@
 
 ## 安装步骤
 
-1. **克隆仓库**：
+1. 克隆仓库：
    ```bash
    git clone git@github.com:yhsjoker/UDP-Socket-Programming.git
    cd UDP-Socket-Programming
@@ -42,3 +42,5 @@
    ```bash
    python udp_client.py -i <server_ip> -p <server_port>
    ```
+   
+可以使用 `python udp_client.py --help` 查看具体参数。
